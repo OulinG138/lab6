@@ -150,9 +150,11 @@ Write a regular expression that captures all such instances
 
 
 ``` r
+library(stringr)
+
 institution <- str_extract_all(
   publications_txt,
-  "[YOUR REGULAR EXPRESSION HERE]"
+  "University\\s+of\\s+[[:alpha:]]+|[[:alpha:]]+\\s+Institute\\s+of\\s[[:alpha:]]+"
 )
 institution <- unlist(institution)
 as.data.frame(table(institution))
@@ -168,8 +170,8 @@ And tabulate the results
 
 ``` r
 schools_and_deps <- str_extract_all(
-  abstracts_txt,
-  "[YOUR REGULAR EXPRESSION HERE]"
+  publications_txt,
+  "(School\\s+of\\s+[A-Za-z\\-]+(?:\\s+[A-Za-z\\-]+)*)|(Department\\s+of\\s+[A-Za-z\\-]+(?:\\s+[A-Za-z\\-]+)*)"
 )
 as.data.frame(table(schools_and_deps))
 ```
@@ -197,26 +199,39 @@ take advantage of vectorization of `stringr::str_extract`
 
 
 ``` r
-abstracts <- str_extract(pub_char_list, "[YOUR REGULAR EXPRESSION]")
-abstracts <- str_remove_all(abstracts, "[CLEAN ALL THE HTML TAGS]")
-abstracts <- str_remove_all(abstracts, "[CLEAN ALL EXTRA WHITE SPACE AND NEW LINES]")
+abstracts <- str_extract(pub_char_list, "<Abstract>([\\s\\S]*?)</Abstract>")
+abstracts <- str_remove_all(abstracts, "<.*?>")
+abstracts <- str_trim(abstracts)
+```
+
+
+``` r
+table(is.na(abstracts))
+```
+
+```
+## 
+## FALSE  TRUE 
+##   285    15
 ```
 
   - How many of these don't have an abstract? 
 
-_Answer here._
+$285$
 
 Now, the title
 
 
 ``` r
-titles <- str_extract(pub_char_list, "[YOUR REGULAR EXPRESSION]")
-titles <- str_remove_all(titles, "[CLEAN ALL THE HTML TAGS]")
+titles <- str_extract(pub_char_list, "<ArticleTitle>(.*?)</ArticleTitle>")
+titles <- str_remove_all(titles, "<.*?>")
+titles <- str_trim(titles)
+table(is.na(titles))
 ```
 
 - How many of these don't have a title ? 
 
-_Answer here._
+**None**
 
 Finally, put everything together into a single `data.frame` and use
 `knitr::kable` to print the results
@@ -224,7 +239,9 @@ Finally, put everything together into a single `data.frame` and use
 
 ``` r
 database <- data.frame(
-  "[DATA TO CONCATENATE]"
+  PubMedID  = ids,
+  Title     = titles,
+  Abstracts = abstracts
 )
 knitr::kable(database)
 ```
